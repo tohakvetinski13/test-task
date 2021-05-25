@@ -24,10 +24,6 @@ type House struct {
 	Floor5 int
 }
 
-type Result struct {
-	Addresses []Address `xml:"item"`
-}
-
 // Add() метод добавляет +1 к количеству n-этажных домов в структуре House
 func (h House) Add(n int) House {
 	switch n {

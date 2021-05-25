@@ -162,49 +162,6 @@ func FindDuplicate(m map[Address]int) map[Address]int {
 }
 
 // Чтение файла XML
-// func ReadFromXML(filename string) (map[Address]int, error) {
-
-// 	f, err := os.Open(filename)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-
-// 	defer f.Close()
-
-// 	decoder := xml.NewDecoder(f)
-
-// 	// Чтение item по частям
-// 	m := make(map[Address]int)
-
-// 	for {
-
-// 		tok, err := decoder.Token()
-// 		if err != nil && err != io.EOF {
-// 			return nil, err
-// 		} else if err == io.EOF {
-// 			break
-// 		}
-
-// 		switch tp := tok.(type) {
-// 		case xml.StartElement:
-// 			if tp.Name.Local == "item" {
-
-// 				// Декодирование элемента в структуру
-// 				var b Address
-// 				err = decoder.DecodeElement(&b, &tp)
-// 				if err != nil {
-// 					return nil, err
-// 				}
-
-// 				m[b] += 1
-
-// 			}
-// 		}
-// 	}
-// 	return m, nil
-// }
-
-// Чтение файла XML
 func ReadFromXML(file io.Reader) (map[Address]int, error) {
 
 	decoder := xml.NewDecoder(file)

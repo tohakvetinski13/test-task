@@ -23,7 +23,7 @@ var addresses = map[Address]int{
 }
 
 func TestReadFromXML(t *testing.T) {
-	got, _ := ReadFromXML(data)
+	got := ReadFromXML(data)
 	want := addresses
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("incorrect, got\n %v,\n want\n %v\n", got, want)

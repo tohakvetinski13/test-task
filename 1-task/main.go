@@ -1,11 +1,14 @@
 package main
 
 import (
+	"bytes"
 	"encoding/xml"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"os"
+	"sync"
 	"time"
 )
 
@@ -37,7 +40,6 @@ func (h House) Add(n int) House {
 		h.Floor2 += 1
 	case 1:
 		h.Floor1 += 1
-
 	}
 	return h
 }
@@ -58,10 +60,7 @@ func main() {
 
 	defer file.Close()
 
-	v, err := ReadFromXML(file)
-	if err != nil {
-		log.Fatal(err)
-	}
+	v := ReadFromXML(file)
 
 	//поиск дубликатов
 	dup := FindDuplicate(v)
@@ -158,37 +157,49 @@ func FindDuplicate(m map[Address]int) map[Address]int {
 }
 
 // Чтение файла XML
-func ReadFromXML(file io.Reader) (map[Address]int, error) {
+//  45408 ns/op            1336 B/op         13 allocs/op
+// Есть предложения как улучшить скорость этой функции? Напишите комент, Please)
+func ReadFromXML(f io.Reader) map[Address]int {
+	ma := make(map[Address]int)
+	lines := make(chan []byte, 1)
+	tok := make(chan Address, 1)
+	wg := new(sync.WaitGroup)
 
-	decoder := xml.NewDecoder(file)
-
-	// Чтение item по частям
-	m := make(map[Address]int)
-
-	for {
-
-		tok, err := decoder.Token()
-		if err != nil && err != io.EOF {
-			return nil, err
-		} else if err == io.EOF {
-			break
+	go func() {
+		lok, err := ioutil.ReadAll(f)
+		if err != nil {
+			log.Fatal(err)
 		}
+		lok2 := bytes.Split(lok, []byte("\n"))
+		for _, val := range lok2 {
+			lines <- val
+		}
+		close(lines)
 
-		switch tp := tok.(type) {
-		case xml.StartElement:
-			if tp.Name.Local == "item" {
+	}()
 
-				// Декодирование элемента в структуру
-				var b Address
-				err = decoder.DecodeElement(&b, &tp)
-				if err != nil {
-					return nil, err
+	for i := 0; i < 5; i++ {
+
+		wg.Add(1)
+		go func() {
+			for v := range lines {
+				b := &Address{}
+				err1 := xml.Unmarshal(v, &b)
+				if err1 != nil {
+					continue
 				}
-
-				m[b] += 1
+				tok <- *b
 
 			}
-		}
+			wg.Done()
+		}()
 	}
-	return m, nil
+	go func() {
+		wg.Wait()
+		close(tok)
+	}()
+	for key := range tok {
+		ma[key]++
+	}
+	return ma
 }
